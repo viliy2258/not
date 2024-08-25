@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ваші нотатки</title>
+</head>
+<body>
+    <h1>Ваші нотатки</h1>
+    <p>Ваш Telegram ID: <span id="telegram-id">невідомо</span></p>
+    <textarea id="notes" placeholder="Введіть свої нотатки тут..."></textarea><br>
+    <button onclick="saveNotes()">Зберегти нотатки</button>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+        import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD-5CPzp5iwNHUxloFkDBf3J8gRlUpbGVc",
+            authDomain: "ton-not.firebaseapp.com",
+            databaseURL: "https://ton-not-default-rtdb.firebaseio.com",
+            projectId: "ton-not",
+            storageBucket: "ton-not.appspot.com",
+            messagingSenderId: "729333286761",
+            appId: "1:729333286761:web:5a0cc89c71712ff28bdff8",
+            measurementId: "G-XNFCBRN9J8"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Отримання Telegram ID
+        let tg = window.Telegram.WebApp;
+        let telegramID = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "невідомо";
+        document.getElementById("telegram-id").innerText = telegramID;
+
+        // Збереження нотаток у Firebase
+        function saveNotes() {
+            const notes = document.getElementById("notes").value;
+
+            if (telegramID === "невідомо") {
+                alert("Неможливо зберегти нотатки. Не вдалося отримати Telegram ID.");
+                return;
+            }
+
+            set(ref(db, 'users/' + telegramID), {
+                notes: notes
+            }).then(() => {
+                alert("Нотатки збережені успішно!");
+            }).catch((error) => {
+                console.error("Помилка при збереженні нотаток: ", error);
+            });
+        }
+
+        // Завантаження нотаток з Firebase
+        function loadNotes() {
+            if (telegramID === "невідомо") return;
+
+            get(child(ref(db), 'users/' + telegramID)).then((snapshot) => {
+                if (snapshot.exists()) {
+                    document.getElementById("notes").value = snapshot.val().notes;
+                }
+            }).catch((error) => {
+                console.error("Помилка при завантаженні нотаток: ", error);
+            });
+        }
+
+        // Завантаження нотаток при відкритті сторінки
+        loadNotes();
+
+    </script>
+</body>
+</html>
